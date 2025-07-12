@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChaCha20 Audio Encryption</title>   
+    <title>ChaCha20 Audio Encryption</title>
 </head>
 
  <nav>
         <div class="app-name">
-            <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
+             <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
         </div>
         <ul>
             <li><a href="/encrypt">Encrypt</a></li>
@@ -18,7 +18,11 @@
 
 <body>
     <div class="content">
-        <div class="big-title"><h1>Hello World!</h1></div>
+        <div class="big-title">
+            <h1>Encryption</h1>
+            <p>Plaintext: {{ plaintext }}</p>
+            <p>Ciphertext: {{ ciphertext }} </p>
+        </div>
     </div>
 </body>
 
@@ -49,6 +53,7 @@
 
     .big-title {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
@@ -63,5 +68,6 @@
         width: 100%;
         height: 100%;
     }
+
 </style>
 </html>
