@@ -1,15 +1,36 @@
+import os
 import json
-from base64 import b64decode
+import cv2
 from Crypto.Cipher import ChaCha20
 
-# We assume that the key was somehow securely shared
-def decrypt(json_input, key):
-    try:
-        b64 = json.loads(json_input)
-        nonce = b64decode(b64['nonce'])
-        ciphertext = b64decode(b64['ciphertext'])
-        cipher = ChaCha20.new(key=key, nonce=nonce)
-        plaintext = cipher.decrypt(ciphertext)
-        print("The message was " + plaintext)
-    except (ValueError, KeyError):
-        print("Incorrect decryption")
+def extract_key_nonce_from_qr_opencv(qr_path):
+    img = cv2.imread(qr_path)
+    detector = cv2.QRCodeDetector()
+    data, bbox, _ = detector.detectAndDecode(img)
+
+    if not data:
+        raise ValueError("QR Code tidak terbaca.")
+
+    parsed = json.loads(data.replace("'", "\""))
+    key = bytes.fromhex(parsed['key'])
+    nonce = bytes.fromhex(parsed['nonce'])
+    ext = parsed.get('ext', '')  # Ekstensi asli (misal: .mp3)
+    return key, nonce, ext
+
+def decrypt_file(qr_path, encrypted_path, output_dir='uploads'):
+    key, nonce, ext = extract_key_nonce_from_qr_opencv(qr_path)
+
+    with open(encrypted_path, 'rb') as f:
+        ciphertext = f.read()
+
+    cipher = ChaCha20.new(key=key, nonce=nonce)
+    plaintext = cipher.decrypt(ciphertext)
+
+    name, _ = os.path.splitext(os.path.basename(encrypted_path))
+    output_name = name + ext  # Pastikan nama akhir punya ekstensi asli
+
+    output_path = os.path.join(output_dir, output_name)
+    with open(output_path, 'wb') as f:
+        f.write(plaintext)
+
+    return output_path
