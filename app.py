@@ -10,15 +10,18 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'json', 'txt', 'mp3', 'jpg'}
+ALLOWED_EXTENSIONS = {'json', 'txt', 'mp3', 'jpg', 'pdf', 'mp4'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+#home page
 @app.route('/')
 def index():
-    return render_template('index.html')  # optional: your landing page
+    return render_template('index.html')
 
+
+#encrypt page
 @app.route('/encrypt', methods=['GET', 'POST'])
 def encrypt_route():
     if request.method == 'POST':
@@ -45,12 +48,14 @@ def encrypt_route():
 
             with open(enc_file, 'rb') as f:
                 ciphertext_preview = f.read()[:16]
+            
+            # Log preview plaintext, ciphertext, key, nonce
+            app.logger.info(f"Plaintext Preview: { plaintext_preview.decode() }")
+            app.logger.info(f"Ciphertext Preview: " + ciphertext_preview.hex())
+            app.logger.info(f"Key Preview: "+ key.hex())
+            app.logger.info(f"Nonce Preview: "+ nonce.hex())
 
             return render_template('encrypt.html',
-                plaintext=plaintext_preview.decode(errors='replace'),
-                ciphertext=ciphertext_preview.hex(),
-                key=key.hex(),
-                nonce=nonce.hex(),
                 encrypted_file=os.path.basename(enc_file),
                 qr_code_file=os.path.basename(qr_path)
             )
@@ -59,6 +64,8 @@ def encrypt_route():
 
     return render_template('encrypt.html')
 
+
+#decrypt page
 @app.route('/decrypt', methods=['GET', 'POST'])
 def decrypt_route():
     if request.method == 'POST':
@@ -85,6 +92,8 @@ def decrypt_route():
 
     return render_template('decrypt.html')
 
+
+#download file
 @app.route('/download/<path:filename>')
 def download_file(filename):
     path = os.path.join(UPLOAD_FOLDER, filename)

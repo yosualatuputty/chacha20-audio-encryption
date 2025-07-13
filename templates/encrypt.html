@@ -22,19 +22,11 @@
         <div class="big-title">
             <h1>Encryption</h1>
 
-            <!-- File upload form -->
-            <form method="POST" enctype="multipart/form-data">
-                <input type="file" name="file" required>
-                <br><br>
-                <button type="submit">Encrypt</button>
-            </form>
-
-            {% if plaintext %}
+{% if qr_code_file %}
+ 
+            <img src="{{ url_for('download_file', filename=qr_code_file) }}" alt="QR Code" width="200">
+            <br><br>
             <hr>
-            <!-- <p><strong>Plaintext (ASCII preview):</strong> {{ plaintext }}</p>
-            <p><strong>Ciphertext (Hex):</strong> {{ ciphertext }}</p>
-            <p><strong>Key:</strong> {{ key }}</p>
-            <p><strong>Nonce:</strong> {{ nonce }}</p> -->
 
             <!-- Download buttons -->
             <a href="{{ url_for('download_file', filename=encrypted_file) }}" download>
@@ -46,9 +38,16 @@
             </a>
 
             <!-- QR Code preview -->
-            <br><br>
-            <img src="{{ url_for('download_file', filename=qr_code_file) }}" alt="QR Code" width="200">
-            {% endif %}
+           
+        {% else %}
+            <!-- File upload form -->
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <br><br>
+                <button type="submit">Encrypt</button>
+            </form>
+     {% endif %}
+            
         </div>
     </div>
 </body>

@@ -17,12 +17,20 @@
             <li><a href="/decrypt">Decrypt</a></li>
         </ul>
     </nav>
-
+  
     <div class="content">
         <div class="big-title">
             <h1>Decryption</h1>
 
-            <!-- Form upload -->
+            {% if decrypted_file %}
+                <hr>
+                <p><strong>Decryption successful!</strong></p>
+                <a href="{{ url_for('download_file', filename=decrypted_file) }}" download>
+                    <button>Download Decrypted File</button>
+                </a>
+
+            {% else %}
+             <!-- Form upload -->
             <form method="POST" enctype="multipart/form-data">
                 <label for="encrypted_file">Encrypted File (.enc):</label><br>
                 <input type="file" name="encrypted_file" required><br><br>
@@ -32,13 +40,6 @@
 
                 <button type="submit">Decrypt</button>
             </form>
-
-            {% if decrypted_file %}
-                <hr>
-                <p><strong>Decryption successful!</strong></p>
-                <a href="{{ url_for('download_file', filename=decrypted_file) }}" download>
-                    <button>Download Decrypted File</button>
-                </a>
             {% endif %}
 
             {% if error %}
