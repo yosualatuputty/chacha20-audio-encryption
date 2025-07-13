@@ -7,7 +7,7 @@ def audio_to__byte(audio_file):
     with open(audio_file, 'rb') as f:
         audio_bytes = f.read()
     return audio_bytes
-    # <class 'bytes'>
+    # <class 'bytes'>   
 
 def encrypt(input='Attack at dawn'):
     plaintext = input.encode('ASCII')
@@ -17,6 +17,7 @@ def encrypt(input='Attack at dawn'):
 
     nonce = b64encode(cipher.nonce).decode('utf-8')
     ct = b64encode(ciphertext).decode('utf-8')
-    result = json.dumps({'nonce':nonce, 'ciphertext':ct})
+    key = b64encode(key).decode('utf-8')
+    result = json.dumps({'nonce':nonce, 'ciphertext':ct, 'key':key})
     
     return input,result

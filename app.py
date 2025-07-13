@@ -16,7 +16,7 @@ def index():
 def encrypt_view():
     plaintext, json_result = encrypt()
     json_result = json.loads(json_result)
-    return render_template('encrypt.html', plaintext=plaintext, ciphertext=json_result['ciphertext'])
+    return render_template('encrypt.html', plaintext=plaintext, ciphertext=json_result['ciphertext'], key=json_result['key'], nonce=json_result['nonce'])
 
 #decrypt page
 @app.route('/decrypt')
