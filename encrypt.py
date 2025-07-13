@@ -3,6 +3,12 @@ from base64 import b64encode
 from Crypto.Cipher import ChaCha20
 from Crypto.Random import get_random_bytes
 
+def audio_to__byte(audio_file):
+    with open(audio_file, 'rb') as f:
+        audio_bytes = f.read()
+    return audio_bytes
+    # <class 'bytes'>
+
 def encrypt(input='Attack at dawn'):
     plaintext = input.encode('ASCII')
     key = get_random_bytes(32)
