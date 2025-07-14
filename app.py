@@ -1,19 +1,55 @@
-from flask import Flask, request, send_file, jsonify, render_template
-import os
+from flask import Flask, Response, request, send_file, jsonify, render_template, redirect,send_from_directory
+import os, cv2
 from werkzeug.utils import secure_filename
 
 from encrypt import encrypt_file
 from qrgen import generate_qr
-from decrypt import decrypt_file
+from decrypt import decrypt_file, decrypt_file_camera
+
+qr_code_data = None
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'json', 'txt', 'mp3', 'jpg', 'pdf', 'mp4'}
+ALLOWED_EXTENSIONS = {'json', 'txt', 'mp3', 'jpg', 'jpeg', 'pdf', 'mp4'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# gambar dari kamera
+def gen_frames():  # generate frame by frame from camera
+    camera = cv2.VideoCapture(2)
+    detector = cv2.QRCodeDetector()
+    global qr_code_data
+    while True:
+        success, frame = camera.read() 
+        if success:
+            data, bbox, _ = detector.detectAndDecode(frame)
+            # check if there is a QRCode in the image
+            if data:
+                qr_code_data = data
+                app.logger.info(f"QR Detected: {qr_code_data}")
+                break
+            try:
+                ret, buffer = cv2.imencode('.jpg', cv2.flip(frame,1))
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+            except Exception as e:
+                pass
+                
+        else:
+            pass
+    with open('static/image.png', 'rb') as f:
+        frame = f.read()
+    yield (b'--frame\r\n'
+    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 #home page
 @app.route('/')
@@ -39,7 +75,7 @@ def encrypt_route():
             file.save(input_path)
 
             # Proses enkripsi
-            enc_file, key_file, key, nonce, original_ext = encrypt_file(input_path, UPLOAD_FOLDER)
+            enc_file, key, nonce, original_ext = encrypt_file(input_path, UPLOAD_FOLDER)
             qr_path = generate_qr(key, nonce, original_ext)
 
             # Preview plaintext & ciphertext
@@ -50,7 +86,7 @@ def encrypt_route():
                 ciphertext_preview = f.read()[:16]
             
             # Log preview plaintext, ciphertext, key, nonce
-            app.logger.info(f"Plaintext Preview: { plaintext_preview.decode() }")
+            app.logger.info(f"Plaintext Preview: { plaintext_preview}")
             app.logger.info(f"Ciphertext Preview: " + ciphertext_preview.hex())
             app.logger.info(f"Key Preview: "+ key.hex())
             app.logger.info(f"Nonce Preview: "+ nonce.hex())
@@ -92,6 +128,30 @@ def decrypt_route():
 
     return render_template('decrypt.html')
 
+#decrypt camera
+@app.route('/decrypt/camera')
+def render_video():
+    return render_template('decrypt.html', camera=True)
+
+@app.route('/process_video', methods=['GET', 'POST'])
+def process_video():
+    global qr_code_data
+    encrypted_file = request.files.get('encrypted_file')
+    if not encrypted_file:
+        return render_template('decrypt.html', error='Please upload encrypted file')
+    if not qr_code_data:
+        return render_template('decrypt.html', error='No QR detected!')
+    enc_filename = secure_filename(encrypted_file.filename)
+
+    enc_path = os.path.join(UPLOAD_FOLDER, enc_filename)
+    encrypted_file.save(enc_path)
+
+    try:
+        output_path = decrypt_file_camera(qr_code_data, enc_path, UPLOAD_FOLDER)
+        return render_template('decrypt.html', decrypted_file=os.path.basename(output_path))
+    except Exception as e:
+        return render_template('decrypt.html', error=str(e))
+
 
 #download file
 @app.route('/download/<path:filename>')
@@ -99,7 +159,8 @@ def download_file(filename):
     path = os.path.join(UPLOAD_FOLDER, filename)
     if os.path.exists(path):
         return send_file(path, as_attachment=True)
-    return 'File not found', 404
+    return 'File not found', 404    
+
 
 if __name__ == '__main__':
     app.run(debug=True)

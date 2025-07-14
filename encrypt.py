@@ -33,4 +33,4 @@ def encrypt_file(input_path, output_dir='uploads'):
         f.write(key + nonce)
 
     # Kembalikan hasil
-    return encrypted_filename, key_nonce_filename, key, nonce, ext
+    return encrypted_filename, key, nonce, ext

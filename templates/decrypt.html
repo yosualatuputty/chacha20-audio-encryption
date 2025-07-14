@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChaCha20 Audio Decryption</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <title>ChaCha20 Audio Encryption</title>   
+    <link rel="stylesheet" href="../static/main.css">
 </head>
 
-<body>
-    <nav>
+ <nav>
         <div class="app-name">
             <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
         </div>
@@ -17,95 +16,155 @@
             <li><a href="/decrypt">Decrypt</a></li>
         </ul>
     </nav>
-  
+
+<body>
     <div class="content">
         <div class="big-title">
             <h1>Decryption</h1>
-
             {% if decrypted_file %}
                 <hr>
                 <p><strong>Decryption successful!</strong></p>
                 <a href="{{ url_for('download_file', filename=decrypted_file) }}" download>
                     <button>Download Decrypted File</button>
                 </a>
+            
+            {% elif camera %}
+                <div class="camera-div">
+                    <div class="camera">
+                         <img src="{{ url_for('video_feed') }}" height="400vh" alt="Camera">
+                    </div>
+                    <div class="form-div">
+                        <form action="{{ url_for('process_video') }}" method="POST" enctype="multipart/form-data">
+                        <label for="encrypted_file">Encrypted File (.enc):</label><br>
+                        <input type="file" name="encrypted_file" required><br><br>
+
+                        <div class="button-div">
+                            <button type="submit">Decrypt</button>
+                            <a href="/decrypt">Go Back</a>
+                        </div>
+                        </form>
+                    </div>
+                </div>
 
             {% else %}
              <!-- Form upload -->
-            <form method="POST" enctype="multipart/form-data">
+              <div class="form-div">
+                <form method="POST" enctype="multipart/form-data">
                 <label for="encrypted_file">Encrypted File (.enc):</label><br>
                 <input type="file" name="encrypted_file" required><br><br>
 
                 <label for="qr_code_file">QR Code (PNG):</label><br>
                 <input type="file" name="qr_code_file" required><br><br>
-
-                <button type="submit">Decrypt</button>
-            </form>
+                
+                <div class="button-div">
+                    <button type="submit">Decrypt</button>
+                    <a href="/decrypt/camera">Use Camera</button>
+                </div>
+                </form>
+              </div>
+           
             {% endif %}
 
             {% if error %}
                 <hr>
                 <p style="color:red;"><strong>Error:</strong> {{ error }}</p>
             {% endif %}
+
         </div>
     </div>
 </body>
 
 <style>
+
     body {
         display: flex;
         flex-direction: column;
         height: 100vh;
         width: 100vw;
         background-color: #ffffff;
+        overflow: hidden;
     }
 
-    nav {
-        background-color: #333;
-        color: white;
-        padding: 10px;
+    .app-name {
         display: flex;
-        justify-content: space-between;
+        flex-direction: row;
+        justify-content: center;
         align-items: center;
+        padding-left: 15pt;
     }
 
-    .app-name a {
-        color: white;
-        text-decoration: none;
+    .app-name a{
+         color: white;
+         text-decoration: none;
+         
     }
 
-    nav ul {
-        list-style: none;
+    h1 {
+        padding: 10pt;
+    }
+
+    .content {
         display: flex;
-        gap: 15px;
-        margin: 0;
-        padding: 0;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
     }
 
-    nav ul li a {
-        color: white;
-        text-decoration: none;
-    }
-
+    
     .big-title {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        padding: 20px;
-        color: black;
+        padding-bottom: 5%;
+        color: rgb(0, 0, 0);
     }
 
-    .content {
-        flex-grow: 1;
+    .camera-div {
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .camera {
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 100%;
+        padding-right: 30pt;
+
     }
 
-    input, button {
-        margin-top: 10px;
+    .camera a {
+        margin: 10pt;
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        background-color: #28a745;
+        border: none;
+        border-radius: 5px;
+        font-size: smaller;
+    }
+
+    img {
+         background: url(http://goo.gl/vyAs27) no-repeat scroll 0 0;
+
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .button-div a {
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        background-color: #28a745;
+        border: none;
+        border-radius: 5px;
+        font-size: smaller;
     }
 
     button {
@@ -117,7 +176,7 @@
         cursor: pointer;
     }
 
-    button:hover {
+    button:hover, .button-div a:hover{
         background-color: #1e7e34;
     }
 </style>
