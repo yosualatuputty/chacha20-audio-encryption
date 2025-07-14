@@ -1,124 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChaCha20 Audio Encryption</title>   
-    <link rel="stylesheet" href="../static/main.css">
+    <title>Encrypt Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='encrypt.css') }}">
 </head>
 
- <nav>
-        <div class="app-name">
-            <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
-        </div>
-        <ul>
-            <li><a href="/encrypt">Encrypt</a></li>
-            <li><a href="/decrypt">Decrypt</a></li>
-        </ul>
-    </nav>
-    
-
 <body>
-    <div class="content">
-        <div class="big-title">
-            <h1>Encryption</h1>
+<div class="container">
+    <nav class="navbar">
+        <a href="/">
+            <div class="nav-logo">
+                <img src="{{ url_for('static', filename='assets/Logo Mambo ChaCha.png') }}" alt="Logo">
+            </div>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-item">Home</a>
+            <a href="/encrypt" class="nav-active nav-item">Encrypt</a>
+            <a href="/decrypt" class="nav-item">Decrypt</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
 
         {% if qr_code_file %}
- 
-            <img src="{{ url_for('download_file', filename=qr_code_file) }}" alt="QR Code" width="200">
-            <br><br>
-            <hr>
-
-            <!-- Download buttons -->
-            <a href="{{ url_for('download_file', filename=encrypted_file) }}" download>
-                <button>Download Ciphertext</button>
-            </a>
-            <hr>
-            <a href="{{ url_for('download_file', filename=qr_code_file) }}" download>
-                <button>Download QR Code</button>
-            </a>
-
-            <!-- QR Code preview -->
-           
+            <section id="encrypt-output" class="encrypt-output-section">
         {% else %}
-            <!-- File upload form -->
-            <form method="POST" enctype="multipart/form-data">
-                <input type="file" name="file" required>
-                <br><br>
-                <button type="submit">Encrypt</button>
+            <section id="encrypt-output" class="encrypt-output-section hidden">
+        {% endif %}
+                <h1 class="title">Enkripsi Berhasil!</h1>
+                <img src="{{ url_for('download_file', filename=qr_code_file) }}" alt="QR Code" class="qr-code-img">
+                <div class="download-button-group">
+                    <a href="{{ url_for('download_file', filename=encrypted_file) }}" class="download-button" download>Download File Enkripsi</a>
+                    <a href="{{ url_for('download_file', filename=qr_code_file) }}" class="download-button" download>Download QR Code</a>
+                </div>
+                <a href="" id="close-output" class="back-link">← Kembali</a>
+            </section>
+
+        {% if qr_code_file %}
+            <section id="encrypt-input" class="encrypt-form-section hidden">
+        {% else %}
+            <section id="encrypt-input" class="encrypt-form-section">
+        {% endif %}
+            <h1 class="title">Enkripsi</h1>
+            <p class="subtitle">
+                Unggah file yang ingin kamu enkripsi. Mambo ChaCha akan mengenkripsi file
+                menggunakan algoritma stream-cipher ChaCha20 dan menghasilkan file QR berisi kunci dan nonce.
+            </p>
+
+            <form id="encryptForm" action="/encrypt" method="post" enctype="multipart/form-data">
+                <label class="file-input-wrapper">
+                    <span id="file-name-display" class="file-name-display">No File Chosen</span>
+                    <input type="file" id="file-upload" name="file" accept=".json, .txt, .mp3, .jpg, .jpeg, .pdf, .mp4">
+                    <button type="button" class="upload-button" id="uploadButtonActual">Upload File</button>
+                </label>
+                <p class="file-type-hint">(.json, .txt, .mp3, .jpg, .jpeg, .pdf, .mp4)</p>
+                <button type="submit" class="encrypt-submit-button hidden" id="encryptButton">Enkripsi</button>
             </form>
-     {% endif %}
-        </div>
-    </div>
+        </section>
+    </main>
+</div>
+
+<script>
+    const fileUploadInput = document.getElementById('file-upload');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const uploadButtonActual = document.getElementById('uploadButtonActual');
+    const encryptButton = document.getElementById('encryptButton');
+    const encryptForm = document.getElementById('encryptForm');
+
+    // Handle file selection
+    fileUploadInput.addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+            fileNameDisplay.textContent = this.files[0].name;
+            uploadButtonActual.classList.add('hidden');
+            encryptButton.classList.remove('hidden');
+        } else {
+            fileNameDisplay.textContent = 'No File Chosen';
+            uploadButtonActual.classList.remove('hidden');
+            encryptButton.classList.add('hidden');
+        }
+    });
+
+    // Trigger input click on button
+    uploadButtonActual.addEventListener('click', function () {
+        fileUploadInput.click();
+    });
+
+    // Validate before submit
+    encryptButton.addEventListener('click', function (event) {
+        if (fileUploadInput.files.length === 0) {
+            event.preventDefault();
+            alert('Mohon pilih file terlebih dahulu sebelum enkripsi!');
+        }
+    });
+
+    // Tombol "← Kembali"
+    document.getElementById('close-output')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('encrypt-output')?.classList.add('hidden');
+        document.getElementById('encrypt-input')?.classList.remove('hidden');
+    });
+
+    // 👇 Prevent form resubmission on refresh
+    if (window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.href);
+    }
+</script>
+
 </body>
 
-<style>
-
-    body {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        width: 100vw;
-        background-color: #ffffff;
-    }
-
-    .app-name {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        padding-left: 15pt;
-    }
-
-    .app-name a{
-         color: white;
-         text-decoration: none;
-         
-    }
-
-    .big-title {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 5%;
-        color: rgb(0, 0, 0);
-    }
-
-    h1 {
-        padding: 10pt;
-    }
-
-    .content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-     form input, form button {
-        margin: 10px;
-    }
-
-    button {
-        padding: 8px 16px;
-        background-color: #008CBA;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background-color: #005f73;
-    }
-
-    img {
-        margin-top: 10px;
-        border: 1px solid #ccc;
-        padding: 4px;
-        background-color: white;
-    }
-</style>
 </html>

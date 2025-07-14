@@ -1,67 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChaCha20 Audio Encryption</title>   
-    <link rel="stylesheet" href="../static/main.css">
+    <title>Decrypt Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 
- <nav>
-        <div class="app-name">
-            <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
-        </div>
-        <ul>
-            <li><a href="/encrypt">Encrypt</a></li>
-            <li><a href="/decrypt">Decrypt</a></li>
-        </ul>
-    </nav>
-
 <body>
-    <div class="content">
-        <div class="big-title"><h1>Hello World!</h1></div>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <a href="/">
+              <div class="nav-logo">
+                  <img src="{{ url_for('static', filename='assets/Logo Mambo ChaCha.png') }}">
+              </div>
+            </a>
+            <a href="/"><div class="nav-active nav-item">Home</div></a>
+            <a href="/encrypt"><div class="nav-item">Encrypt</div></a>
+            <a href="/decrypt"><div class="nav-item">Decrypt</div></a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <h1 class="title">Mambo ChaCha</h1>
+            <p class="subtitle">
+                Memungkinkan kamu untuk mengamankan file pribadi menggunakan algoritma enkripsi stream-chipher ChaCha20, dan mendekripsinya kembali hanya dengan QR Code
+            </p>
+
+            <div class="section-container">
+            <!-- Encrypt Section -->
+             <a href="encrypt">
+                <div class="encrypt-section">
+                    <h1 class="title">Enkripsi</h1>
+                </div>
+              </a>
+
+              <!-- Decrypt Section -->
+              <a href="/decrypt">
+                <div class="decrypt-section">
+                  <h1 class="title">Dekripsi</h1>
+                </div>
+              </a>
+            </div>
+        </main>
     </div>
 </body>
-
-<style>
-
-    body {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        width: 100vw;
-        background-color: #ffffff;
-    }
-
-    .app-name {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        padding-left: 15pt;
-    }
-
-    .app-name a{
-         color: white;
-         text-decoration: none;
-         
-    }
-
-    .big-title {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        color: rgb(0, 0, 0);
-    }
-
-    .content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-</style>
 </html>
