@@ -12,40 +12,55 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'json', 'txt', 'mp3', 'jpg', 'jpeg', 'pdf', 'mp4'}
+ALLOWED_EXTENSIONS = {
+    'json', 'txt', 'mp3', 'jpg', 'jpeg', 'pdf', 'mp4',
+    'zip', 'tar', 'docx'
+}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# gambar dari kamera
-def gen_frames():  # generate frame by frame from camera
-    camera = cv2.VideoCapture(2)
+def open_camera(indices=[2, 1, 0]):
+    for i in indices:
+        cap = cv2.VideoCapture(i)
+        if cap is not None and cap.isOpened():
+            print(f"[INFO] Using camera at index {i}")
+            return cap
+        cap.release()
+    raise RuntimeError("No available camera found.")
+
+def gen_frames():
+    camera = open_camera([2, 1, 0])  # coba dari index 2, 1, lalu 0
     detector = cv2.QRCodeDetector()
     global qr_code_data
+
     while True:
-        success, frame = camera.read() 
+        success, frame = camera.read()
         if success:
             data, bbox, _ = detector.detectAndDecode(frame)
-            # check if there is a QRCode in the image
             if data:
                 qr_code_data = data
                 app.logger.info(f"QR Detected: {qr_code_data}")
                 break
+
             try:
-                ret, buffer = cv2.imencode('.jpg', cv2.flip(frame,1))
+                ret, buffer = cv2.imencode('.jpg', cv2.flip(frame, 1))
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
             except Exception as e:
+                print(f"[ERROR] Encoding frame: {e}")
                 pass
-                
         else:
+            print("[WARNING] Failed to read from camera")
             pass
+
+    # Tampilkan gambar statis setelah selesai deteksi
     with open('static/image.png', 'rb') as f:
         frame = f.read()
     yield (b'--frame\r\n'
-    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
         
 @app.route('/video_feed')
 def video_feed():
