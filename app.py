@@ -20,6 +20,15 @@ ALLOWED_EXTENSIONS = {
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def clear_uploads():
+    for filename in os.listdir(UPLOAD_FOLDER):
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"[WARNING] Failed to delete {file_path}: {e}")
+
 def open_camera(indices=[2, 1, 0]):
     for i in indices:
         cap = cv2.VideoCapture(i)
@@ -30,32 +39,64 @@ def open_camera(indices=[2, 1, 0]):
     raise RuntimeError("No available camera found.")
 
 def gen_frames():
-    camera = open_camera([2, 1, 0])  # coba dari index 2, 1, lalu 0
+    camera = open_camera([2, 1, 0])
     detector = cv2.QRCodeDetector()
     global qr_code_data
 
     while True:
         success, frame = camera.read()
-        if success:
-            data, bbox, _ = detector.detectAndDecode(frame)
-            if data:
-                qr_code_data = data
-                app.logger.info(f"QR Detected: {qr_code_data}")
-                break
+        if not success:
+            continue
 
+        data, bbox, _ = detector.detectAndDecode(frame)
+        if data and bbox is not None:
+            qr_code_data = data
+            app.logger.info(f"QR Detected: {qr_code_data}")
+
+            # Mirror frame dulu
+            frame = cv2.flip(frame, 1)
+
+            # Transform koordinat bbox (mirror koordinat X)
+            frame_width = frame.shape[1]
+            pts = bbox.astype(int).reshape(-1, 2)
+            mirrored_pts = []
+            for (x, y) in pts:
+                mirrored_pts.append((frame_width - x, y))
+
+            # Gambar kotak QR (mirror)
+            for i in range(len(mirrored_pts)):
+                pt1 = mirrored_pts[i]
+                pt2 = mirrored_pts[(i + 1) % len(mirrored_pts)]
+                cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
+
+            # Teks di atas QR
+            text_x, text_y = mirrored_pts[0]
+            cv2.putText(frame, "QR Terdeteksi", (text_x, text_y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+
+            # Simpan hasil frame
+            cv2.imwrite('static/image.png', frame)
+
+            # Encode untuk streaming
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            break
+
+        else:
+            # Belum terdeteksi: tampilkan frame biasa (mirror)
             try:
-                ret, buffer = cv2.imencode('.jpg', cv2.flip(frame, 1))
+                frame = cv2.flip(frame, 1)
+                ret, buffer = cv2.imencode('.jpg', frame)
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             except Exception as e:
                 print(f"[ERROR] Encoding frame: {e}")
-                pass
-        else:
-            print("[WARNING] Failed to read from camera")
-            pass
+                continue
 
-    # Tampilkan gambar statis setelah selesai deteksi
+    # Fallback: tampilkan gambar hasil terakhir
     with open('static/image.png', 'rb') as f:
         frame = f.read()
     yield (b'--frame\r\n'
@@ -69,12 +110,14 @@ def video_feed():
 #home page
 @app.route('/')
 def index():
+    clear_uploads()
     return render_template('index.html')
 
 
 #encrypt page
 @app.route('/encrypt', methods=['GET', 'POST'])
 def encrypt_route():
+    clear_uploads()    
     if request.method == 'POST':
         if 'file' not in request.files:
             return render_template('encrypt.html', error='No file provided')
@@ -119,6 +162,7 @@ def encrypt_route():
 #decrypt page
 @app.route('/decrypt', methods=['GET', 'POST'])
 def decrypt_route():
+    clear_uploads()
     if request.method == 'POST':
         encrypted_file = request.files.get('encrypted_file')
         qr_code_file = request.files.get('qr_code_file')
@@ -150,6 +194,7 @@ def render_video():
 
 @app.route('/process_video', methods=['GET', 'POST'])
 def process_video():
+    clear_uploads()
     global qr_code_data
     encrypted_file = request.files.get('encrypted_file')
     if not encrypted_file:

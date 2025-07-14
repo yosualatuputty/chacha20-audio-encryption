@@ -35,7 +35,7 @@
                     <a href="{{ url_for('download_file', filename=encrypted_file) }}" class="download-button" download>Download File Enkripsi</a>
                     <a href="{{ url_for('download_file', filename=qr_code_file) }}" class="download-button" download>Download QR Code</a>
                 </div>
-                <a href="" id="close-output" class="back-link">← Kembali</a>
+                <a href="/encrypt" id="close-output" class="back-link">← Kembali</a>
             </section>
 
         {% if qr_code_file %}
