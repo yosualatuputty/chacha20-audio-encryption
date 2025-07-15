@@ -1,183 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChaCha20 Audio Encryption</title>   
-    <link rel="stylesheet" href="../static/main.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Decrypt Tool</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='decrypt.css') }}">
 </head>
 
- <nav>
-        <div class="app-name">
-            <a href="/"><h3>ChaCha20 Audio Encryption</h3></a>
-        </div>
-        <ul>
-            <li><a href="/encrypt">Encrypt</a></li>
-            <li><a href="/decrypt">Decrypt</a></li>
-        </ul>
+<body>
+  <div class="container">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <a href="/"><div class="nav-logo"><img src="{{ url_for('static', filename='assets/Logo Mambo ChaCha.png') }}"></div></a>
+      <a href="/"><div class="nav-item">Home</div></a>
+      <a href="/encrypt"><div class="nav-item">Encrypt</div></a>
+      <a href="/decrypt"><div class="nav-active nav-item">Decrypt</div></a>
     </nav>
 
-<body>
-    <div class="content">
-        <div class="big-title">
-            <h1>Decryption</h1>
-            {% if decrypted_file %}
-                <hr>
-                <p><strong>Decryption successful!</strong></p>
-                <a href="{{ url_for('download_file', filename=decrypted_file) }}" download>
-                    <button>Download Decrypted File</button>
-                </a>
-            
-            {% elif camera %}
-                <div class="camera-div">
-                    <div class="camera">
-                         <img src="{{ url_for('video_feed') }}" height="400vh" alt="Camera">
-                    </div>
-                    <div class="form-div">
-                        <form action="{{ url_for('process_video') }}" method="POST" enctype="multipart/form-data">
-                        <label for="encrypted_file">Encrypted File (.enc):</label><br>
-                        <input type="file" name="encrypted_file" required><br><br>
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1 class="title">Dekripsi</h1>
+      <p class="subtitle">
+        Unggah file yang telah dienkripsi menggunakan ChaCha20, lalu upload QR Code yang berisi kunci dan nonce.
+      </p>
 
-                        <div class="button-div">
-                            <button type="submit">Decrypt</button>
-                            <a href="/decrypt">Go Back</a>
-                        </div>
-                        </form>
-                    </div>
+      <!-- Upload Section -->
+      <div class="upload-section" id="uploadSection">
+        <form method="POST" enctype="multipart/form-data">
+          <!-- Upload Ciphertext -->
+          <div class="upload-group">
+            <label class="upload-label" for="encrypted_file">
+              Upload file Ciphertext <span class="file-type">(.enc)</span>
+            </label>
+            <div class="file-input-wrapper">
+              <input type="file" name="encrypted_file" id="encrypted_file" class="file-input" required>
+              <button type="button" class="select-files-btn" onclick="document.getElementById('encrypted_file').click()">
+                <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"/>
+                </svg>
+                Select Files
+              </button>
+              <span class="file-name" id="encrypted-file-name"></span>
+            </div>
+          </div>
+
+          <!-- Upload QR Code or Scan -->
+          <div class="upload-group">
+            <label class="upload-label">Upload QR Code <span class="file-type">(.png)</span></label>
+            <div class="qr-upload-options">
+              <div class="qr-file-section">
+                <div class="file-input-wrapper">
+                  <input type="file" name="qr_code_file" id="qr_code_file" class="file-input" accept="image/*">
+                  <button type="button" class="select-files-btn" onclick="document.getElementById('qr_code_file').click()">
+                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"/>
+                    </svg>
+                    Select Files
+                  </button>
                 </div>
-
-            {% else %}
-             <!-- Form upload -->
-              <div class="form-div">
-                <form method="POST" enctype="multipart/form-data">
-                <label for="encrypted_file">Encrypted File (.enc):</label><br>
-                <input type="file" name="encrypted_file" required><br><br>
-
-                <label for="qr_code_file">QR Code (PNG):</label><br>
-                <input type="file" name="qr_code_file" required><br><br>
-                
-                <div class="button-div">
-                    <button type="submit">Decrypt</button>
-                    <a href="/decrypt/camera">Use Camera</button>
-                </div>
-                </form>
+                <span class="file-name" id="qr-file-name"></span>
               </div>
-           
-            {% endif %}
+              <span class="or-text">or</span>
+              <button type="button" class="scan-btn" onclick="openCameraModal()">
+                <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                </svg>
+                Scan
+              </button>
+            </div>
+          </div>
 
-            {% if error %}
-                <hr>
-                <p style="color:red;"><strong>Error:</strong> {{ error }}</p>
-            {% endif %}
+          <!-- Hidden input: menandai QR dari kamera -->
+          <input type="hidden" name="qr_from_camera" id="qr_from_camera" value="0">
 
+          <!-- Decrypt Button -->
+          <button type="submit" class="decrypt-btn">Decrypt</button>
+        </form>
+
+        <!-- Download Section -->
+        {% if decrypted_file %}
+        <div class="download-section" id="downloadSection">
+          <button class="close-btn" onclick="closeDownloadSection()" title="Tutup">×</button>
+          <div class="success-message">
+            <span class="success-icon">✅</span>
+            <strong>Decryption successful!</strong>
+          </div>
+          <a href="{{ url_for('download_file', filename=decrypted_file) }}" download>
+            <button class="download-btn">
+              <span class="btn-icon">📥</span>
+              Download Decrypted File
+            </button>
+          </a>
         </div>
+        {% endif %}
+
+        <!-- Error Message -->
+        {% if error %}
+        <div class="error-section" id="errorSection">
+          <div class="error-message">
+            <button class="close-btn small" onclick="closeDownloadSection()" title="Tutup">×</button>
+            <span class="error-icon">❌</span>
+            <strong>Error:</strong> {{ error }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Camera Modal -->
+  <div id="cameraModal" class="camera-modal">
+    <div class="camera-modal-content">
+      <div class="camera-modal-header">
+        <h2 class="camera-modal-title">Scan QR Code</h2>
+        <button class="camera-close" onclick="closeCameraModal()">&times;</button>
+      </div>
+      <div class="camera-modal-body">
+        <div class="camera-container">
+          <img id="cameraFeed" class="camera-feed" alt="QR Scan Feed" style="width: 100%; border-radius: 10px;">
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="camera-btn upload" onclick="submitCameraDecrypt()">Decrypt</button>
+          <button type="button" class="camera-btn secondary" onclick="retakeCamera()">Retake</button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    document.getElementById('encrypted_file').addEventListener('change', function (e) {
+      document.getElementById('encrypted-file-name').textContent = e.target.files[0]?.name || '';
+    });
+
+    document.getElementById('qr_code_file').addEventListener('change', function (e) {
+      document.getElementById('qr-file-name').textContent = e.target.files[0]?.name || '';
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const errorSection = document.getElementById('errorSection');
+      const downloadSection = document.getElementById('downloadSection');
+      const decryptBtn = document.querySelector('.decrypt-btn');
+
+      if (errorSection || downloadSection) {
+        decryptBtn.style.display = 'none';
+      }
+
+      if (performance.getEntriesByType("navigation")[0].type === "reload") {
+        if (errorSection) errorSection.remove();
+        if (downloadSection) downloadSection.remove();
+        decryptBtn.style.display = 'inline-block';
+      }
+    });
+
+    function closeDownloadSection() {
+      const downloadSection = document.getElementById('downloadSection');
+      const errorSection = document.getElementById('errorSection');
+      const decryptBtn = document.querySelector('.decrypt-btn');
+
+      if (downloadSection) downloadSection.remove();
+      if (errorSection) errorSection.remove();
+      if (decryptBtn) decryptBtn.style.display = 'inline-block';
+    }
+
+    function openCameraModal() {
+      const timestamp = new Date().getTime();
+      document.getElementById('cameraFeed').src = "{{ url_for('video_feed') }}?t=" + timestamp;
+      document.getElementById('cameraModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCameraModal() {
+      document.getElementById('cameraFeed').src = "";
+      document.getElementById('cameraModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    function retakeCamera() {
+      document.getElementById('cameraFeed').src = "";
+      setTimeout(() => {
+        const timestamp = new Date().getTime();
+        document.getElementById('cameraFeed').src = "{{ url_for('video_feed') }}?t=" + timestamp;
+      }, 100);
+    }
+
+    function submitCameraDecrypt() {
+      document.getElementById('qr_from_camera').value = '1';
+      document.querySelector('form').submit();
+    }
+  </script>
 </body>
-
-<style>
-
-    body {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        width: 100vw;
-        background-color: #ffffff;
-        overflow: hidden;
-    }
-
-    .app-name {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        padding-left: 15pt;
-    }
-
-    .app-name a{
-         color: white;
-         text-decoration: none;
-         
-    }
-
-    h1 {
-        padding: 10pt;
-    }
-
-    .content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    
-    .big-title {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding-bottom: 5%;
-        color: rgb(0, 0, 0);
-    }
-
-    .camera-div {
-        width: 100vw;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .camera {
-        display: flex;
-        align-items: center;
-        padding-right: 30pt;
-
-    }
-
-    .camera a {
-        margin: 10pt;
-        color: white;
-        padding: 8px 16px;
-        text-decoration: none;
-        background-color: #28a745;
-        border: none;
-        border-radius: 5px;
-        font-size: smaller;
-    }
-
-    img {
-         background: url(http://goo.gl/vyAs27) no-repeat scroll 0 0;
-
-    }
-
-    form {
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-    }
-
-    .button-div a {
-        color: white;
-        padding: 8px 16px;
-        text-decoration: none;
-        background-color: #28a745;
-        border: none;
-        border-radius: 5px;
-        font-size: smaller;
-    }
-
-    button {
-        padding: 8px 16px;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    button:hover, .button-div a:hover{
-        background-color: #1e7e34;
-    }
-</style>
 </html>

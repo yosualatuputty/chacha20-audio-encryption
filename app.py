@@ -166,21 +166,31 @@ def decrypt_route():
     if request.method == 'POST':
         encrypted_file = request.files.get('encrypted_file')
         qr_code_file = request.files.get('qr_code_file')
+        qr_from_camera = request.form.get('qr_from_camera') == '1'
+        global qr_code_data
 
-        if not encrypted_file or not qr_code_file:
-            return render_template('decrypt.html', error='Both files are required.')
+        if not encrypted_file:
+            return render_template('decrypt.html', error='Encrypted file is required.')
 
         enc_filename = secure_filename(encrypted_file.filename)
-        qr_filename = secure_filename(qr_code_file.filename)
-
         enc_path = os.path.join(UPLOAD_FOLDER, enc_filename)
-        qr_path = os.path.join(UPLOAD_FOLDER, qr_filename)
-
         encrypted_file.save(enc_path)
-        qr_code_file.save(qr_path)
 
         try:
-            output_path = decrypt_file(qr_path, enc_path, UPLOAD_FOLDER)
+            if qr_from_camera:
+                if not qr_code_data:
+                    return render_template('decrypt.html', error='No QR code detected from camera.')
+                output_path = decrypt_file_camera(qr_code_data, enc_path, UPLOAD_FOLDER)
+            else:
+                if not qr_code_file:
+                    return render_template('decrypt.html', error='QR code file is required.')
+
+                qr_filename = secure_filename(qr_code_file.filename)
+                qr_path = os.path.join(UPLOAD_FOLDER, qr_filename)
+                qr_code_file.save(qr_path)
+
+                output_path = decrypt_file(qr_path, enc_path, UPLOAD_FOLDER)
+
             return render_template('decrypt.html', decrypted_file=os.path.basename(output_path))
         except Exception as e:
             return render_template('decrypt.html', error=str(e))
