@@ -106,6 +106,12 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, '', window.location.href);
     }
+
+    window.addEventListener("beforeunload", function () {
+    // Kirim permintaan ke server saat tab ditutup
+    navigator.sendBeacon("/client_closed");
+    });
+    
 </script>
 
 </body>

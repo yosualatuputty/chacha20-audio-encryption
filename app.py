@@ -6,6 +6,8 @@ from encrypt import encrypt_file
 from qrgen import generate_qr
 from decrypt import decrypt_file, decrypt_file_camera
 
+import signal, sys
+
 qr_code_data = None
 
 app = Flask(__name__)
@@ -16,6 +18,19 @@ ALLOWED_EXTENSIONS = {
     'json', 'txt', 'mp3', 'jpg', 'jpeg', 'pdf', 'mp4',
     'zip', 'tar', 'docx'
 }
+
+def handle_exit(sig, frame):
+    clear_uploads()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, handle_exit)
+signal.signal(signal.SIGTERM, handle_exit)
+
+@app.route('/client_closed', methods=['POST'])
+def client_closed():
+    print("[INFO] Tab browser ditutup. Membersihkan folder uploads...")
+    clear_uploads()
+    return ''
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -75,7 +90,7 @@ def gen_frames():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
             # Simpan hasil frame
-            cv2.imwrite('static/image.png', frame)
+            cv2.imwrite('uploads/image_qr_cv2.png', frame)
 
             # Encode untuk streaming
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -97,7 +112,7 @@ def gen_frames():
                 continue
 
     # Fallback: tampilkan gambar hasil terakhir
-    with open('static/image.png', 'rb') as f:
+    with open('uploads/image_qr_cv2.png', 'rb') as f:
         frame = f.read()
     yield (b'--frame\r\n'
            b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')

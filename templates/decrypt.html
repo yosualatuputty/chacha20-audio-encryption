@@ -188,6 +188,11 @@
       document.getElementById('qr_from_camera').value = '1';
       document.querySelector('form').submit();
     }
+
+    window.addEventListener("beforeunload", function () {
+    // Kirim permintaan ke server saat tab ditutup
+    navigator.sendBeacon("/client_closed");
+    });
   </script>
 </body>
 </html>
