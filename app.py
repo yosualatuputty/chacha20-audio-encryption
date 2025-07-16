@@ -18,6 +18,7 @@ qr_code_data = None
 
 # === Manajemen Folder Per-Session ===
 
+#Ini Ubah v
 def get_user_upload_folder():
     if 'user_folder' not in session:
         session['user_folder'] = str(uuid.uuid4())
@@ -25,16 +26,26 @@ def get_user_upload_folder():
     os.makedirs(folder, exist_ok=True)
     return folder
 
-def clear_user_uploads():
-    folder_id = session.pop('user_folder', None)
-    if folder_id:
-        folder_path = os.path.join(UPLOAD_FOLDER, folder_id)
-        if os.path.isdir(folder_path):
-            try:
-                shutil.rmtree(folder_path)
-                print(f"[INFO] Folder session dihapus: {folder_path}")
-            except Exception as e:
-                print(f"[WARNING] Gagal menghapus folder session: {e}")
+#Ini Ubah v
+def clear_user_uploads(session_id=None):
+    if session_id is None:
+        session_id = session.pop('user_folder', None)
+    
+    # Jika tetap None setelah coba ambil dari session, hentikan fungsi
+    if session_id is None:
+        print("[INFO] Tidak ada folder session yang ditemukan untuk dihapus.")
+        return
+
+    folder_path = os.path.join(UPLOAD_FOLDER, session_id)
+    if os.path.isdir(folder_path):
+        try:
+            shutil.rmtree(folder_path)
+            print(f"[INFO] Folder session dihapus: {folder_path}")
+        except Exception as e:
+            print(f"[WARNING] Gagal menghapus folder session: {e}")
+
+
+
 
 # === Shutdown Handler ===
 
@@ -50,7 +61,7 @@ signal.signal(signal.SIGTERM, handle_exit)
 @app.route('/client_closed', methods=['POST'])
 def client_closed():
     print("[INFO] Browser client ditutup. Menghapus folder session.")
-    clear_user_uploads()
+    clear_user_uploads() #Ini Tambah <
     return '', 204
 
 # === Utilitas ===
@@ -94,8 +105,8 @@ def gen_frames():
             cv2.putText(frame, "QR Terdeteksi", tuple(pts[0]),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-            output_path_qr = os.path.join(get_user_upload_folder(), 'image_qr_cv2.png')
-            cv2.imwrite('uploads/image_qr_cv2.png', frame)
+            output_path_qr = os.path.join(get_user_upload_folder(), 'image_qr_cv2.png') #Ini Ubah <
+            cv2.imwrite(get_user_upload_folder(), frame)#Ini Ubah <
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
@@ -108,7 +119,7 @@ def gen_frames():
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     # Jika sudah selesai
-    with open('uploads/image_qr_cv2.png', 'rb') as f:
+    with open(get_user_upload_folder(), 'rb') as f: #Ini Ubah <
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + f.read() + b'\r\n')
 
 @app.route('/video_feed')
@@ -119,12 +130,12 @@ def video_feed():
 
 @app.route('/')
 def index():
-    clear_user_uploads()
+    clear_user_uploads() #Ini Tambah <
     return render_template('index.html')
 
 @app.route('/encrypt', methods=['GET', 'POST'])
 def encrypt_route():
-    clear_user_uploads()
+    clear_user_uploads()#Ini Tambah <
     if request.method == 'POST':
         file = request.files.get('file')
         if not file or file.filename == '':
@@ -137,7 +148,7 @@ def encrypt_route():
             file.save(input_path)
 
             enc_file, key, nonce, ext = encrypt_file(input_path, folder)
-            qr_path = generate_qr(key, nonce, ext, output_folder=get_user_upload_folder())  # Jika pakai path tetap di qrgen.py
+            qr_path = generate_qr(key, nonce, ext, output_folder=get_user_upload_folder())  #Ini Ubah <
 
             return render_template('encrypt.html', 
                 encrypted_file=os.path.basename(enc_file),
@@ -148,7 +159,7 @@ def encrypt_route():
 
 @app.route('/decrypt', methods=['GET', 'POST'])
 def decrypt_route():
-    clear_user_uploads()
+    clear_user_uploads()#Ini Tambah <
     if request.method == 'POST':
         encrypted_file = request.files.get('encrypted_file')
         qr_code_file = request.files.get('qr_code_file')
@@ -183,7 +194,7 @@ def decrypt_route():
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    folder = get_user_upload_folder()
+    folder = get_user_upload_folder()#Ini Ubah <
     path = os.path.join(folder, filename)
     if os.path.exists(path):
         return send_file(path, as_attachment=True)
