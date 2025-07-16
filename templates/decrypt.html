@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Decrypt Tool</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='decrypt.css') }}">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 
 <body>
@@ -33,7 +34,7 @@
               Upload file Ciphertext <span class="file-type">(.enc)</span>
             </label>
             <div class="file-input-wrapper">
-              <input type="file" name="encrypted_file" id="encrypted_file" class="file-input" required>
+              <input type="file" name="encrypted_file" id="encrypted_file" class="file-input" required accept=".enc">
               <button type="button" class="select-files-btn" onclick="document.getElementById('encrypted_file').click()">
                 <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"/>
@@ -70,8 +71,9 @@
             </div>
           </div>
 
-          <!-- Hidden input: menandai QR dari kamera -->
+          <!-- Hidden input -->
           <input type="hidden" name="qr_from_camera" id="qr_from_camera" value="0">
+          <input type="hidden" name="qr_camera_data" id="qr_camera_data" value="">
 
           <!-- Decrypt Button -->
           <button type="submit" class="decrypt-btn">Decrypt</button>
@@ -94,7 +96,6 @@
         </div>
         {% endif %}
 
-        <!-- Error Message -->
         {% if error %}
         <div class="error-section" id="errorSection">
           <div class="error-message">
@@ -116,9 +117,8 @@
         <button class="camera-close" onclick="closeCameraModal()">&times;</button>
       </div>
       <div class="camera-modal-body">
-        <div class="camera-container">
-          <img id="cameraFeed" class="camera-feed" alt="QR Scan Feed" style="width: 100%; border-radius: 10px;">
-        </div>
+        <div id="qr-reader" style="width: 100%; max-width: 350px; margin: auto; border-radius: 10px;"></div>
+        <p id="qr-detected-text" style="display: none; color: green; font-weight: bold; text-align: center; margin-top: 10px;">✅ QR Terdeteksi</p>
         <div class="camera-controls">
           <button type="button" class="camera-btn upload" onclick="submitCameraDecrypt()">Decrypt</button>
           <button type="button" class="camera-btn secondary" onclick="retakeCamera()">Retake</button>
@@ -129,24 +129,26 @@
 
   <!-- Script -->
   <script>
-    document.getElementById('encrypted_file').addEventListener('change', function (e) {
+    let qrScanner;
+
+    document.getElementById('encrypted_file').addEventListener('change', e => {
       document.getElementById('encrypted-file-name').textContent = e.target.files[0]?.name || '';
     });
 
-    document.getElementById('qr_code_file').addEventListener('change', function (e) {
+    document.getElementById('qr_code_file').addEventListener('change', e => {
       document.getElementById('qr-file-name').textContent = e.target.files[0]?.name || '';
     });
 
     document.addEventListener('DOMContentLoaded', function () {
+      const decryptBtn = document.querySelector('.decrypt-btn');
       const errorSection = document.getElementById('errorSection');
       const downloadSection = document.getElementById('downloadSection');
-      const decryptBtn = document.querySelector('.decrypt-btn');
 
       if (errorSection || downloadSection) {
         decryptBtn.style.display = 'none';
       }
 
-      if (performance.getEntriesByType("navigation")[0].type === "reload") {
+      if (performance.getEntriesByType("navigation")[0]?.type === "reload") {
         if (errorSection) errorSection.remove();
         if (downloadSection) downloadSection.remove();
         decryptBtn.style.display = 'inline-block';
@@ -154,44 +156,87 @@
     });
 
     function closeDownloadSection() {
-      const downloadSection = document.getElementById('downloadSection');
-      const errorSection = document.getElementById('errorSection');
-      const decryptBtn = document.querySelector('.decrypt-btn');
-
-      if (downloadSection) downloadSection.remove();
-      if (errorSection) errorSection.remove();
-      if (decryptBtn) decryptBtn.style.display = 'inline-block';
+      document.getElementById('downloadSection')?.remove();
+      document.getElementById('errorSection')?.remove();
+      document.querySelector('.decrypt-btn').style.display = 'inline-block';
     }
 
     function openCameraModal() {
-      const timestamp = new Date().getTime();
-      document.getElementById('cameraFeed').src = "{{ url_for('video_feed') }}?t=" + timestamp;
       document.getElementById('cameraModal').style.display = 'block';
       document.body.style.overflow = 'hidden';
+
+      if (!qrScanner) {
+        qrScanner = new Html5Qrcode("qr-reader");
+      }
+
+      qrScanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrBoxSize = Math.floor(minEdge * 0.7);
+            return { width: qrBoxSize, height: qrBoxSize };
+          }
+        },
+        qrCodeMessage => {
+          document.getElementById("qr-detected-text").style.display = "block";
+          document.getElementById("qr_from_camera").value = '1';
+          document.getElementById("qr_camera_data").value = qrCodeMessage;
+        },
+        errorMessage => {}
+      ).catch(err => {
+        console.error("QR Reader Error:", err);
+      });
     }
 
     function closeCameraModal() {
-      document.getElementById('cameraFeed').src = "";
-      document.getElementById('cameraModal').style.display = 'none';
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          document.getElementById("qr-detected-text").style.display = "none";
+        }).catch(err => {
+          console.warn("QR Scanner stop failed:", err);
+        });
+      }
+
+      document.getElementById("cameraModal").style.display = 'none';
       document.body.style.overflow = 'auto';
     }
 
     function retakeCamera() {
-      document.getElementById('cameraFeed').src = "";
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        document.getElementById('cameraFeed').src = "{{ url_for('video_feed') }}?t=" + timestamp;
-      }, 100);
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+        qrScanner = new Html5Qrcode("qr-reader");
+          document.getElementById("qr-detected-text").style.display = "none";
+          qrScanner.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: function(viewfinderWidth, viewfinderHeight) {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const qrBoxSize = Math.floor(minEdge * 0.7);
+                return { width: qrBoxSize, height: qrBoxSize };
+              }
+            },
+            qrCodeMessage => {
+              document.getElementById("qr-detected-text").style.display = "block";
+              document.getElementById("qr_from_camera").value = '1';
+              document.getElementById("qr_camera_data").value = qrCodeMessage;
+            },
+            errorMessage => {}
+          );
+        }).catch(err => {
+          console.error("Restart failed:", err);
+        });
+      }
     }
 
     function submitCameraDecrypt() {
-      document.getElementById('qr_from_camera').value = '1';
       document.querySelector('form').submit();
     }
 
     window.addEventListener("beforeunload", function () {
-    // Kirim permintaan ke server saat tab ditutup
-    navigator.sendBeacon("/client_closed");
+      navigator.sendBeacon("/client_closed");
     });
   </script>
 </body>

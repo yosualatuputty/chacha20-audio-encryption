@@ -1,21 +1,38 @@
 import os
 import json
-import cv2
+#import cv2
 from Crypto.Cipher import ChaCha20
+from pyzbar.pyzbar import decode
+from PIL import Image
 
 def extract_key_nonce_from_qr_opencv(qr_path):
-    img = cv2.imread(qr_path)
-    detector = cv2.QRCodeDetector()
-    data, bbox, _ = detector.detectAndDecode(img)
-
-    if not data:
+    image = Image.open(qr_path)
+    decoded_objects = decode(image)
+    print(decoded_objects)
+    if not decoded_objects:
         raise ValueError("QR Code tidak terbaca.")
+
+    data = decoded_objects[0].data.decode('utf-8')
 
     parsed = json.loads(data.replace("'", "\""))
     key = bytes.fromhex(parsed['key'])
     nonce = bytes.fromhex(parsed['nonce'])
     ext = parsed.get('ext', '')  # Ekstensi asli (misal: .mp3)
     return key, nonce, ext
+
+# def extract_key_nonce_from_qr_opencv(qr_path):
+#     img = cv2.imread(qr_path)
+#     detector = cv2.QRCodeDetector()
+#     data, bbox, _ = detector.detectAndDecode(img)
+
+#     if not data:
+#         raise ValueError("QR Code tidak terbaca.")
+
+#     parsed = json.loads(data.replace("'", "\""))
+#     key = bytes.fromhex(parsed['key'])
+#     nonce = bytes.fromhex(parsed['nonce'])
+#     ext = parsed.get('ext', '')  # Ekstensi asli (misal: .mp3)
+#     return key, nonce, ext
 
 
 def decrypt_file(qr_path, encrypted_path, output_dir='uploads'):
