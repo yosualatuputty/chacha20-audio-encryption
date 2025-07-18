@@ -40,7 +40,7 @@ def extract_key_nonce_from_qr_opencv(qr_path):
 #     return key, nonce, ext
 
 
-def decrypt_file(qr_path, encrypted_path, output_dir='uploads'):
+def decrypt_file(qr_path, encrypted_path, output_dir='/tmp/uploads'):
     key, nonce, ext = extract_key_nonce_from_qr_opencv(qr_path)
 
     with open(encrypted_path, 'rb') as f:
