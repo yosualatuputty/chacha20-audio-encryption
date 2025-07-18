@@ -12,7 +12,7 @@ qr_code_data = None
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+#os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {
     'json', 'txt', 'mp3', 'jpg', 'jpeg', 'pdf', 'mp4',
