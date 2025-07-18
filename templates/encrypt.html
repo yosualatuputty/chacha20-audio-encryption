@@ -30,10 +30,10 @@
             <section id="encrypt-output" class="encrypt-output-section hidden">
         {% endif %}
                 <h1 class="title">Enkripsi Berhasil!</h1>
-                <img src="{{ url_for('download_file', filename=qr_code_file) }}" alt="QR Code" class="qr-code-img">
+                <img src="/tmp/uploads/{ qr_code_file }" alt="QR Code" class="qr-code-img">
                 <div class="download-button-group">
-                    <a href="{{ url_for('download_file', filename=encrypted_file) }}" class="download-button" download>Download File Enkripsi</a>
-                    <a href="{{ url_for('download_file', filename=qr_code_file) }}" class="download-button" download>Download QR Code</a>
+                    <a href="/tmp/uploads/{ encrypted_file }" class="download-button" download>Download File Enkripsi</a>
+                    <a href="/tmp/uploads/{ qr_code_file }" class="download-button" download>Download QR Code</a>
                 </div>
                 <a href="/encrypt" id="close-output" class="back-link">← Kembali</a>
             </section>
