@@ -1,7 +1,7 @@
 import qrcode
 import os
 
-def generate_qr(key, nonce, ext, output_path='tmp/uploads/qr_key_nonce.png'):
+def generate_qr(key, nonce, ext, output_path='/tmp/uploads/qr_key_nonce.png'):
     # Gabungkan key dan nonce (hex)
     data = {
         'key': key.hex(),
