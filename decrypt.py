@@ -1,9 +1,7 @@
 import os
 import json
-#import cv2
 from Crypto.Cipher import ChaCha20
 from PIL import Image
-# from zxing import BarCodeReader
 
 # def extract_key_nonce_from_qr_opencv(qr_path):
 #     reader = BarCodeReader()
