@@ -12,7 +12,7 @@ import signal, sys
 qr_code_data = None
 
 app = Flask(__name__)
-UPLOAD_FOLDER = '/tmp/uploads'
+UPLOAD_FOLDER = '/tmp'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {

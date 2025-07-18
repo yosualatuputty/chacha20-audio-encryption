@@ -2,7 +2,7 @@ from Crypto.Cipher import ChaCha20
 from Crypto.Random import get_random_bytes
 import os
 
-def encrypt_file(input_path, output_dir='/tmp/uploads'):
+def encrypt_file(input_path, output_dir='/tmp'):
     """
     Enkripsi file menggunakan ChaCha20.
     Mengembalikan path ciphertext, path key_nonce, key, nonce, dan ekstensi asli.

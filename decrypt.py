@@ -3,7 +3,7 @@ import json
 from Crypto.Cipher import ChaCha20
 
 
-def decrypt_file_camera(qr_string, encrypted_path, output_dir="/tmp/uploads"):
+def decrypt_file_camera(qr_string, encrypted_path, output_dir="/tmp"):
     parsed = json.loads(qr_string.replace("'", "\""))
     key = bytes.fromhex(parsed['key'])
     nonce = bytes.fromhex(parsed['nonce'])
