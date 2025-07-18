@@ -14,7 +14,7 @@ qr_code_data = None
 
 app = Flask(__name__)
 app.secret_key = get_random_bytes(24)
-UPLOAD_FOLDER = '/tmp/uploads'
+UPLOAD_FOLDER = '/tmp'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {
