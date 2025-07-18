@@ -242,7 +242,7 @@ def decrypt_route():
 
 
 #download file
-@app.route('/download/<path:filename>')
+@app.route('/download')
 def download_file(filename):
     path = os.path.join(UPLOAD_FOLDER, filename)
     if os.path.exists(path):
