@@ -2,22 +2,27 @@ import os
 import json
 #import cv2
 from Crypto.Cipher import ChaCha20
-from pyzbar.pyzbar import decode
 from PIL import Image
+from zxing import BarCodeReader
 
 def extract_key_nonce_from_qr_opencv(qr_path):
-    image = Image.open(qr_path)
-    decoded_objects = decode(image)
-    print(decoded_objects)
-    if not decoded_objects:
+    reader = BarCodeReader()
+    result = reader.decode(qr_path)
+
+    print(result.parsed)
+    
+    if not result:
         raise ValueError("QR Code tidak terbaca.")
 
-    data = decoded_objects[0].data.decode('utf-8')
+    data = result.parsed
 
+    # Convert single quotes to double quotes for valid JSON (if needed)
     parsed = json.loads(data.replace("'", "\""))
+
     key = bytes.fromhex(parsed['key'])
     nonce = bytes.fromhex(parsed['nonce'])
-    ext = parsed.get('ext', '')  # Ekstensi asli (misal: .mp3)
+    ext = parsed.get('ext', '')
+
     return key, nonce, ext
 
 # def extract_key_nonce_from_qr_opencv(qr_path):
