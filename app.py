@@ -1,7 +1,6 @@
-from flask import Flask, Response, request, send_file, session, jsonify, render_template, redirect,send_from_directory
-import os, uuid, shutil
+from flask import Flask, request, send_file, jsonify, render_template, redirect,send_from_directory
+import os
 from werkzeug.utils import secure_filename
-from Crypto.Random import get_random_bytes
 
 from encrypt import encrypt_file
 from qrgen import generate_qr
@@ -13,7 +12,6 @@ import signal, sys
 qr_code_data = None
 
 app = Flask(__name__)
-app.secret_key = get_random_bytes(24)
 UPLOAD_FOLDER = '/tmp/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -22,20 +20,8 @@ ALLOWED_EXTENSIONS = {
     'zip', 'tar', 'docx'
 }
 
-def get_user_upload_folder():
-    if 'user_folder' not in session:
-        session['user_folder'] = str(uuid.uuid4())
-    folder = os.path.join(UPLOAD_FOLDER, session['user_folder'])
-    os.makedirs(folder, exist_ok=True)
-    return folder
-
 def handle_exit(sig, frame):
-    print("[INFO] Server dimatikan. Menghapus semua uploads global.")
-    try:
-        shutil.rmtree(UPLOAD_FOLDER)
-        print("[INFO] Semua uploads berhasil dihapus.")
-    except Exception as e:
-        print(f"[WARNING] Gagal menghapus uploads: {e}")
+    clear_uploads()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, handle_exit)
@@ -44,39 +30,32 @@ signal.signal(signal.SIGTERM, handle_exit)
 @app.route('/client_closed', methods=['POST'])
 def client_closed():
     print("[INFO] Tab browser ditutup. Membersihkan folder uploads...")
-    # session_id = session.pop('user_folder', None)
-    clear_uploads(get_user_upload_folder())
+    clear_uploads()
     return ''
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def clear_uploads(session_id):
-    if session_id is None:
-        print("[INFO] Tidak ada folder session yang ditemukan untuk dihapus.")
-        return
-
-    folder_path = os.path.join(UPLOAD_FOLDER, session_id)
-    if os.path.isdir(folder_path):
+def clear_uploads():
+    for filename in os.listdir(UPLOAD_FOLDER):
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
         try:
-            shutil.rmtree(folder_path)
-            print(f"[INFO] Folder session dihapus: {folder_path}")
+            if os.path.isfile(file_path):
+                os.remove(file_path)
         except Exception as e:
-            print(f"[WARNING] Gagal menghapus folder session: {e}")
-
-
+            print(f"[WARNING] Failed to delete {file_path}: {e}")
 
 #home page
 @app.route('/')
 def index():
-    session_id = session.pop('user_folder', None)
-    clear_uploads(session_id)
+    clear_uploads()
     return render_template('index.html')
 
 
 #encrypt page
 @app.route('/encrypt', methods=['GET', 'POST'])
 def encrypt_route():
+    clear_uploads()    
     if request.method == 'POST':
         if 'file' not in request.files:
             return render_template('encrypt.html', error='No file provided')
@@ -88,12 +67,12 @@ def encrypt_route():
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            input_path = os.path.join(get_user_upload_folder(), filename)
+            input_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(input_path)
 
             # Proses enkripsi
-            enc_file, key, nonce, original_ext = encrypt_file(input_path, get_user_upload_folder())
-            qr_path = generate_qr(key, nonce, original_ext, get_user_upload_folder())
+            enc_file, key, nonce, original_ext = encrypt_file(input_path, UPLOAD_FOLDER)
+            qr_path = generate_qr(key, nonce, original_ext)
 
             # Preview plaintext & ciphertext
             with open(input_path, 'rb') as f:
@@ -121,7 +100,6 @@ def encrypt_route():
 #decrypt page
 @app.route('/decrypt', methods=['GET', 'POST'])
 def decrypt():
-    folder = get_user_upload_folder()
     decrypted_file = None
     error = None
 
@@ -136,7 +114,7 @@ def decrypt():
                 raise ValueError("Encrypted file is required.")
 
             enc_filename = os.path.basename(enc_file.filename)
-            encrypted_path = os.path.join(folder, enc_filename)
+            encrypted_path = os.path.join(UPLOAD_FOLDER, enc_filename)
             enc_file.save(encrypted_path)
 
             if qr_from_camera == "1" and qr_camera_data:
@@ -155,11 +133,10 @@ def decrypt():
 #download file
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    folder = get_user_upload_folder()
-    file_path = os.path.join(folder, filename)
-    if os.path.isfile(file_path):
-        return send_file(file_path, as_attachment=True, download_name=filename)
-    return 'File not found', 404   
+    path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(path):
+        return send_file(path, as_attachment=True)
+    return 'File not found', 404    
 
 
 if __name__ == '__main__':
