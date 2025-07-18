@@ -1,14 +1,13 @@
 import qrcode
+import os
 
-def generate_qr(key, nonce, ext, output_path='/tmp/uploads/qr_key_nonce.png'):
-    # Gabungkan key dan nonce (hex)
+def generate_qr(key, nonce, ext, output_path):
     data = {
         'key': key.hex(),
         'nonce': nonce.hex(),
         'ext': ext
     }
-
-    # Buat QR code
     qr = qrcode.make(str(data))
-    qr.save(output_path)
-    return output_path
+    qr_path = os.path.join(output_path, 'qr_key.png')
+    qr.save(qr_path)
+    return qr_path

@@ -2,12 +2,14 @@ import os
 import json
 from Crypto.Cipher import ChaCha20
 
-
-def decrypt_file_camera(qr_string, encrypted_path, output_dir="/tmp/uploads"):
+def decrypt_file_camera(qr_string, encrypted_path):
     parsed = json.loads(qr_string.replace("'", "\""))
     key = bytes.fromhex(parsed['key'])
     nonce = bytes.fromhex(parsed['nonce'])
     ext = parsed.get('ext', '')
+
+    if ext and not ext.startswith('.'):
+        ext = '.' + ext
 
     with open(encrypted_path, 'rb') as f:
         ciphertext = f.read()
@@ -17,6 +19,7 @@ def decrypt_file_camera(qr_string, encrypted_path, output_dir="/tmp/uploads"):
 
     name, _ = os.path.splitext(os.path.basename(encrypted_path))
     output_name = name + ext
+    output_dir = os.path.dirname(encrypted_path)
     output_path = os.path.join(output_dir, output_name)
 
     with open(output_path, 'wb') as f:
