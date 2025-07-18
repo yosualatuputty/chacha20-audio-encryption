@@ -195,6 +195,7 @@
     function closeCameraModal() {
       if (qrScanner) {
         qrScanner.stop().then(() => {
+          qrScanner.clear();
           document.getElementById("qr-detected-text").style.display = "none";
         }).catch(err => {
           console.warn("QR Scanner stop failed:", err);
@@ -254,8 +255,6 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
 
-    const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-    const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
     const reader = new ZXing.BrowserQRCodeReader();
 
     try {
