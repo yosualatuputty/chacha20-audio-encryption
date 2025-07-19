@@ -246,35 +246,23 @@
   const file = e.target.files[0];
   if (!file) return;
 
-  const img = new Image();
-  img.onload = async () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
+  const imageUrl = URL.createObjectURL(file);
+  const zreader = new ZXing.BrowserQRCodeReader ();
 
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-
-    const reader = new ZXing.BrowserQRCodeReader();
 
     try {
-      const result = await reader.decodeFromImageElement(img);
+      const result = await zreader.decodeFromImageUrl(imageUrl);
       console.log("QR Code content:", result.text);
 
       document.getElementById("qr_from_camera").value = '1';
       document.getElementById("qr_camera_data").value = result.text;
-
     } catch (err) {
-      console.error("Failed to decode QR:", err);
-      alert("Gagal membaca QR code. Pastikan gambar valid.");
-    }
-  };
-
-  const reader = new FileReader();
-  reader.onload = function () {
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+        console.error("Failed to decode QR:", err);
+        alert("Gagal membaca QR code. Pastikan gambar valid.");
+    }  finally {
+    // Revoke the blob URL *after* usage
+    URL.revokeObjectURL(imageUrl);
+  }
 });
   </script>
 </body>
